@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Global Profile Service
+    </title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body class="bg-slate-100 min-h-screen">
+
+    <div class="container mx-auto px-6 py-8">
+
+        <!-- Header -->
+
+        <div class="mb-8">
+
+            <h1 class="text-4xl font-bold text-slate-800">
+
+                Global Profile Service
+
+            </h1>
+
+            <p class="text-slate-600 mt-2">
+
+                Quorum-Based Distributed Locking (2/3 Majority)
+
+            </p>
+
+        </div>
+
+        <!-- Controls -->
+
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+
+            <h2 class="text-xl font-semibold mb-4">
+
+                Scenario Selection
+
+            </h2>
+
+            <div class="flex flex-wrap gap-3">
+
+                <button
+                    onclick="selectScenario('healthy')"
+                    class="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded">
+
+                    Healthy
+
+                </button>
+
+                <button
+                    onclick="selectScenario('slow')"
+                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2 rounded">
+
+                    Slow Node
+
+                </button>
+
+                <button
+                    onclick="selectScenario('down')"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded">
+
+                    Node Down
+
+                </button>
+
+                <button
+                    onclick="selectScenario('fail')"
+                    class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded">
+
+                    Quorum Fail
+
+                </button>
+
+            </div>
+
+            <div class="mt-5 flex gap-3">
+
+                <button
+                    onclick="runBenchmark()"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded font-semibold">
+
+                    Run Benchmark
+
+                </button>
+
+                <button
+                    onclick="runAllBenchmarks()"
+                    class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded font-semibold">
+
+                    Run All Benchmarks
+
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- Current Scenario -->
+
+        <div class="mb-6">
+
+            <h2 class="text-lg font-semibold">
+
+                Current Scenario :
+
+                <span
+                    id="scenarioName"
+                    class="text-indigo-600">
+
+                    HEALTHY
+
+                </span>
+
+            </h2>
+
+        </div>
+
+        <!-- Sites -->
+
+        <div
+            id="sites"
+            class="grid md:grid-cols-3 gap-4 mb-8">
+
+        </div>
+
+        <!-- Metrics -->
+
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+
+            <div class="bg-white rounded-lg shadow p-6">
+
+                <h3 class="text-slate-500">
+
+                    Average Latency
+
+                </h3>
+
+                <p
+                    id="latency"
+                    class="text-4xl font-bold text-indigo-600 mt-2">
+
+                    -
+
+                </p>
+
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+
+                <h3 class="text-slate-500">
+
+                    Throughput
+
+                </h3>
+
+                <p
+                    id="throughput"
+                    class="text-4xl font-bold text-green-600 mt-2">
+
+                    -
+
+                </p>
+
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+
+                <h3 class="text-slate-500">
+
+                    Success Rate
+
+                </h3>
+
+                <p
+                    id="success"
+                    class="text-4xl font-bold text-blue-600 mt-2">
+
+                    -
+
+                </p>
+
+            </div>
+
+        </div>
+
+        <!-- Statistics -->
+
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+
+            <div class="bg-white rounded-lg shadow p-6">
+
+                <h3 class="font-semibold mb-3">
+
+                    Benchmark Statistics
+
+                </h3>
+
+                <p>
+
+                    Total Transactions :
+
+                    <span id="totalTx">
+
+                        -
+
+                    </span>
+
+                </p>
+
+                <p>
+
+                    Successful Transactions :
+
+                    <span id="successTx">
+
+                        -
+
+                    </span>
+
+                </p>
+
+                <p>
+
+                    Execution Time :
+
+                    <span id="executionTime">
+
+                        -
+
+                    </span>
+
+                </p>
+
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+
+                <h3 class="font-semibold mb-3">
+
+                    Benchmark Status
+
+                </h3>
+
+                <p id="benchmarkStatus">
+
+                    Waiting...
+
+                </p>
+
+            </div>
+
+        </div>
+
+        <!-- Current Profile -->
+
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+
+            <h2 class="text-xl font-semibold mb-4">
+
+                Current User Profile
+
+            </h2>
+
+            <pre
+                id="profileData"
+                class="bg-slate-100 p-4 rounded overflow-auto">
+
+No benchmark executed
+
+            </pre>
+
+        </div>
+
+        <!-- Chart -->
+
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+
+            <h2 class="text-xl font-semibold mb-4">
+
+                Benchmark Results
+
+            </h2>
+
+            <canvas id="chart"></canvas>
+
+        </div>
+
+        <!-- Comparison Table -->
+
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+
+            <h2 class="text-xl font-semibold mb-4">
+
+                Scenario Comparison
+
+            </h2>
+
+            <table class="w-full border">
+
+                <thead>
+
+                    <tr class="bg-slate-200">
+
+                        <th class="border p-2">
+                            Scenario
+                        </th>
+
+                        <th class="border p-2">
+                            Latency (ms)
+                        </th>
+
+                        <th class="border p-2">
+                            Throughput
+                        </th>
+
+                        <th class="border p-2">
+                            Success Rate
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="comparisonTable">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <!-- Analysis -->
+
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+
+            <h2 class="text-xl font-semibold mb-4">
+
+                Analysis Result
+
+            </h2>
+
+            <div id="analysisResult">
+
+                Run All Benchmarks to generate analysis.
+
+            </div>
+
+        </div>
+
+        <!-- Logs -->
+
+        <div class="bg-white rounded-lg shadow p-6">
+
+            <h2 class="text-xl font-semibold mb-4">
+
+                Transaction Logs
+
+            </h2>
+
+            <div
+                id="logs"
+                class="bg-slate-50 border rounded p-4 h-80 overflow-y-auto font-mono text-sm">
+
+            </div>
+
+        </div>
+
+        <!-- Expected Results -->
+
+        <div class="bg-white rounded-lg shadow p-6 mt-8">
+
+            <h2 class="text-xl font-semibold mb-4">
+
+                Expected Analysis
+
+            </h2>
+
+            <table class="w-full border">
+
+                <thead>
+
+                    <tr class="bg-slate-200">
+
+                        <th class="border p-2">
+                            Scenario
+                        </th>
+
+                        <th class="border p-2">
+                            Expected Result
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <tr>
+
+                        <td class="border p-2">
+                            Healthy
+                        </td>
+
+                        <td class="border p-2">
+                            Độ trễ bình thường, tỷ lệ thành công 100%.
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class="border p-2">
+                            Slow Node
+                        </td>
+
+                        <td class="border p-2">
+                            Độ trễ gần như tương đồng vì cơ chế quorum sử dụng Site1 + Site2.
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class="border p-2">
+                            Node Down
+                        </td>
+
+                        <td class="border p-2">
+                            Vẫn thành công vì phần lớn vẫn còn sẵn có.
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td class="border p-2">
+                            Quorum Fail
+                        </td>
+
+                        <td class="border p-2">
+                            Không đạt quorum (2/3 lock) → transaction thất bại.
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <script src="/static/app.js"></script>
+
+</body>
+
+</html>
