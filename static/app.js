@@ -1,9 +1,7 @@
 let currentScenario = "healthy";
 let chart = null;
 
-// =====================================
 // LOAD SCENARIO
-// =====================================
 
 async function selectScenario(scenario) {
 
@@ -40,9 +38,7 @@ async function selectScenario(scenario) {
     }
 }
 
-// =====================================
 // RUN SINGLE BENCHMARK
-// =====================================
 
 async function runBenchmark() {
 
@@ -92,9 +88,7 @@ async function runBenchmark() {
     }
 }
 
-// =====================================
 // RUN ALL BENCHMARKS
-// =====================================
 
 async function runAllBenchmarks() {
 
@@ -136,9 +130,7 @@ async function runAllBenchmarks() {
     }
 }
 
-// =====================================
 // SITE STATUS
-// =====================================
 
 function renderSites(sites) {
 
@@ -195,9 +187,7 @@ function renderSites(sites) {
         html;
 }
 
-// =====================================
 // UPDATE METRICS
-// =====================================
 
 function updateMetrics(data) {
 
@@ -232,9 +222,7 @@ function updateMetrics(data) {
         data.benchmark_time + " s";
 }
 
-// =====================================
 // PROFILE
-// =====================================
 
 function renderProfile(profile) {
 
@@ -249,9 +237,7 @@ function renderProfile(profile) {
         );
 }
 
-// =====================================
 // LOGS
-// =====================================
 
 function renderLogs(logs) {
 
@@ -279,9 +265,7 @@ function renderLogs(logs) {
         html;
 }
 
-// =====================================
 // CHART
-// =====================================
 
 function renderChart(data) {
 
@@ -343,9 +327,7 @@ function renderChart(data) {
     });
 }
 
-// =====================================
 // COMPARISON TABLE
-// =====================================
 
 function renderComparisonTable(data) {
 
@@ -387,9 +369,7 @@ function renderComparisonTable(data) {
     `;
 }
 
-// =====================================
 // ANALYSIS
-// =====================================
 
 function renderAnalysis(data) {
 
@@ -452,9 +432,7 @@ function renderAnalysis(data) {
     `;
 }
 
-// =====================================
 // RESET DASHBOARD
-// =====================================
 
 function resetDashboard() {
 
@@ -499,9 +477,7 @@ function resetDashboard() {
     resetChart();
 }
 
-// =====================================
 // RESET CHART
-// =====================================
 
 function resetChart() {
 
@@ -563,9 +539,7 @@ function resetChart() {
     });
 }
 
-// =====================================
 // INITIAL LOAD
-// =====================================
 
 window.onload = () => {
 

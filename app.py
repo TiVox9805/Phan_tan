@@ -13,7 +13,6 @@ DEFAULT_PROFILE = {
     "email": "john@example.com"
 }
 
-
 # SITE
 
 class Site:
@@ -51,7 +50,6 @@ class Site:
 
         if self.lock.locked():
             self.lock.release()
-
 
 # QUORUM MANAGER
 
@@ -125,7 +123,6 @@ class QuorumManager:
 
         for site in locked_sites:
             site.release_lock()
-
 
 # SCENARIO FACTORY
 
@@ -224,7 +221,6 @@ def create_cluster(
         "healthy"
     )
 
-
 # SCENARIO DATA
 
 def get_scenario_data(
@@ -259,7 +255,6 @@ def get_scenario_data(
 
         ]
     }
-
 
 # BENCHMARK
 
@@ -450,7 +445,6 @@ def run_benchmark(
             logs[-20:]
     }
 
-
 # ROUTES
 
 @app.route("/")
@@ -529,7 +523,6 @@ def benchmark_all():
             fail
 
     })
-
 
 # MAIN
 
