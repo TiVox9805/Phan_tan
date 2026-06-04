@@ -289,9 +289,9 @@ Tỷ lệ giao dịch thành công.
 
 | Kịch bản    | Latency (ms) | Throughput (tx/s) | Success Rate |
 | ----------- | ------------ | ----------------- | ------------ |
-| Healthy     | 26.95        | 37.09             | 100%         |
-| Slow Node   | 26.22        | 38.14             | 100%         |
-| Node Down   | 29.46        | 33.94             | 100%         |
+| Healthy     | 26.6        | 37.59             | 100%         |
+| Slow Node   | 26.8        | 38.31             | 100%         |
+| Node Down   | 27.06        | 36.95             | 100%         |
 | Quorum Fail | 0            | 0                 | 0%           |
 
 ---
@@ -319,10 +319,3 @@ Kết quả thực nghiệm chứng minh:
 * Giao dịch chỉ được thực hiện khi đạt đa số lock (2/3).
 * Hệ thống có khả năng chịu lỗi tốt trong môi trường phân tán.
 
----
-
-# Tác giả
-
-Đồ án cuối kỳ môn Cơ sở dữ liệu phân tán (Distributed Database Systems)
-
-Đề tài: **Quorum-Based Distributed Locking – Global Profile Service**
