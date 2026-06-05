@@ -383,12 +383,14 @@ function renderAnalysis(data) {
         data.down.latency;
 
     const slowDiff =
-        (slow - healthy)
-        .toFixed(2);
+        Math.abs(
+            slow - healthy
+        ).toFixed(2);
 
     const downDiff =
-        (down - healthy)
-        .toFixed(2);
+        Math.abs(
+            down - healthy
+        ).toFixed(2);
 
     document
         .getElementById(

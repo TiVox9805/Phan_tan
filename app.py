@@ -2,16 +2,43 @@ from flask import Flask, jsonify, render_template
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import time
+import csv
 
+def load_profiles():
+  
+    profiles = []
+
+    with open(
+        "data.csv",
+        mode="r",
+        encoding="utf-8"
+    ) as file:
+
+        reader = csv.DictReader(file)
+
+        for row in reader:
+
+            profiles.append({
+
+                "id":
+                    int(row["id"]),
+
+                "name":
+                    row["name"],
+
+                "email":
+                    row["email"],
+
+                "department":
+                    row["department"],
+
+                "last_updated":
+                    row["last_updated"]
+
+            })
+
+    return profiles
 app = Flask(__name__)
-
-# DATASET
-
-DEFAULT_PROFILE = {
-    "id": 1,
-    "name": "John Doe",
-    "email": "john@example.com"
-}
 
 # SITE
 
@@ -31,7 +58,7 @@ class Site:
         self.lock = threading.Lock()
 
         # Replicated profile
-        self.profile = DEFAULT_PROFILE.copy()
+        self.profiles = load_profiles()
 
     def acquire_lock(self):
 
@@ -298,19 +325,27 @@ def run_benchmark(
 
             success_count += 1
 
-            # =====================================
             # UPDATE USER PROFILE
-            # =====================================
+
+            record_index = (
+
+                (tx - 1)
+
+                % len(
+                    locked[0].profiles
+                )
+
+            )
 
             new_name = (
-                f"User-{tx}"
+                f"UpdatedUser-{tx}"
             )
 
             for site in locked:
 
-                site.profile[
-                    "name"
-                ] = new_name
+                site.profiles[
+                    record_index
+                ]["name"] = new_name
 
             latency = (
 
@@ -326,8 +361,9 @@ def run_benchmark(
             logs.append(
 
                 f"TX-{tx}: "
-                f"Updated Profile -> "
-                f"{new_name}"
+                f"Updated User ID "
+                f"{record_index + 1} "
+                f"-> {new_name}"
 
             )
 
@@ -385,9 +421,17 @@ def run_benchmark(
 
     )
 
-    current_profile = (
-        sites[0].profile.copy()
-    )
+    if success_count > 0:
+  
+        current_profile = (
+            sites[0].profiles[record_index].copy()
+        )
+
+    else:
+
+        current_profile = (
+            sites[0].profiles[0].copy()
+        )
 
     return {
 

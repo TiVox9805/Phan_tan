@@ -1,40 +1,89 @@
-# Quorum-Based Distributed Locking – Global Profile Service
+# Quorum-Based Distributed Locking trong Hệ Quản Lý Hồ Sơ Người Dùng Phân Tán
 
 ## Giới thiệu
 
-Đồ án mô phỏng cơ chế **Quorum-Based Distributed Locking** trong hệ thống quản lý hồ sơ người dùng phân tán (Global Profile Service).
+Đồ án mô phỏng cơ chế **Quorum-Based Distributed Locking** trong hệ cơ sở dữ liệu phân tán dùng để quản lý hồ sơ người dùng.
 
-Dữ liệu hồ sơ người dùng được sao chép (replicate) trên **3 Site** khác nhau. Để cập nhật hồ sơ, hệ thống phải lấy được khóa (lock) từ **đa số Site (2/3)** trước khi thực hiện ghi dữ liệu.
+Trong hệ thống, dữ liệu hồ sơ người dùng được sao chép (Replication) trên nhiều Site nhằm tăng tính sẵn sàng và khả năng chịu lỗi. Khi có yêu cầu cập nhật dữ liệu, hệ thống phải lấy được khóa (Lock) từ đa số Site trước khi cho phép ghi dữ liệu.
 
-Mục tiêu của đồ án là đánh giá khả năng duy trì hiệu năng của hệ thống khi:
-
-* Một Site hoạt động bình thường (Healthy).
-* Một Site bị chậm (Slow Node - 500ms).
-* Một Site bị ngắt kết nối (Node Down).
-* Không đạt đủ Quorum (Quorum Fail).
+Đồ án tập trung đánh giá khả năng hoạt động của hệ thống trong các điều kiện khác nhau như hoạt động bình thường, một nút bị chậm, một nút bị lỗi hoặc không đạt đủ số lượng Site cần thiết để hình thành Quorum.
 
 ---
 
 # Mục tiêu đề tài
 
-Dataset:
+Trong cơ sở dữ liệu phân tán, dữ liệu thường được lưu trữ trên nhiều Site khác nhau để đảm bảo khả năng truy cập liên tục và tăng độ tin cậy của hệ thống.
 
-```python
-User_Profile = {
-    "id": 1,
-    "name": "John Doe",
-    "email": "john@example.com"
-}
+Tuy nhiên, việc cập nhật dữ liệu trên nhiều bản sao cùng lúc có thể dẫn đến:
+
+* Mất tính nhất quán dữ liệu.
+* Xung đột ghi dữ liệu.
+* Một số Site được cập nhật trong khi các Site khác chưa được cập nhật.
+
+Để giải quyết vấn đề này, đồ án sử dụng cơ chế **Quorum-Based Distributed Locking**.
+
+Mỗi giao dịch cập nhật hồ sơ người dùng phải:
+
+* Lấy được khóa từ ít nhất 2 trong 3 Site.
+* Chỉ thực hiện cập nhật khi đạt đủ Quorum.
+* Từ chối giao dịch nếu không đạt đủ số lượng khóa yêu cầu.
+
+---
+
+# Đặc tả dữ liệu (Dataset Specification)
+
+## Nguồn dữ liệu
+
+Dữ liệu được tạo thủ công và lưu dưới dạng:
+
+```text
+data.csv
 ```
 
-Được sao chép trên 3 Site.
+## Kích thước dữ liệu
 
-Yêu cầu:
+* Số lượng hồ sơ người dùng: 500 bản ghi
+* Định dạng: CSV
+* Dung lượng: khoảng 60–100 KB
 
-* Muốn cập nhật hồ sơ phải lấy được lock từ đa số Site.
-* Sử dụng cơ chế Quorum (2/3).
-* Mô phỏng một Site có độ trễ 500ms.
-* So sánh thời gian phản hồi giữa các kịch bản khác nhau.
+## Cấu trúc dữ liệu
+
+| Thuộc tính   | Ý nghĩa                 |
+| ------------ | ----------------------- |
+| id           | Mã người dùng           |
+| name         | Họ tên                  |
+| email        | Địa chỉ email           |
+| department   | Phòng ban               |
+| last_updated | Thời gian cập nhật cuối |
+
+Ví dụ:
+
+```csv
+id,name,email,department,last_updated
+1,John Smith,john.smith@example.com,IT,2026-01-01
+```
+
+---
+
+# Chiến lược sao chép dữ liệu
+
+Đồ án sử dụng cơ chế **Replication**.
+
+Toàn bộ dữ liệu được sao chép trên cả 3 Site:
+
+```text
+Site 1 → 500 hồ sơ
+
+Site 2 → 500 hồ sơ
+
+Site 3 → 500 hồ sơ
+```
+
+Việc sao chép dữ liệu giúp:
+
+* Tăng tính sẵn sàng.
+* Đảm bảo hệ thống vẫn hoạt động khi một Site gặp sự cố.
+* Hỗ trợ cơ chế Quorum.
 
 ---
 
@@ -46,52 +95,120 @@ Yêu cầu:
                             v
                     Quorum Manager
                             |
-        -------------------------------------
-        |                |                 |
-        v                v                 v
+      ---------------------------------------
+      |                 |                  |
+      v                 v                  v
 
-      Site 1          Site 2           Site 3
-      20ms            25ms             30ms
+    Site 1           Site 2            Site 3
+    20ms             25ms              30ms
 
-    UserProfile    UserProfile      UserProfile
+  500 Records      500 Records       500 Records
 ```
 
-Trong đó:
+## Thành phần hệ thống
 
-* Client gửi yêu cầu cập nhật hồ sơ.
-* Quorum Manager chịu trách nhiệm lấy lock từ các Site.
-* Mỗi Site lưu một bản sao của User Profile.
+### Client
+
+* Gửi yêu cầu cập nhật hồ sơ.
+* Hiển thị kết quả benchmark.
+
+### Quorum Manager
+
+* Gửi yêu cầu khóa đến các Site.
+* Thu thập phản hồi.
+* Xác định giao dịch có đạt Quorum hay không.
+
+### Site
+
+Mỗi Site:
+
+* Lưu trữ một bản sao dữ liệu.
+* Quản lý khóa cục bộ.
+* Trả lời yêu cầu khóa từ Quorum Manager.
 
 ---
 
-# Quy tắc Quorum
+# Thuật toán Quorum-Based Distributed Locking
 
-Hệ thống sử dụng:
+Hệ thống gồm:
 
 ```text
-Write Quorum = 2/3
+N = 3 Site
 ```
 
-Điều này có nghĩa:
+Số lượng khóa ghi yêu cầu:
 
-* Phải lấy được lock từ ít nhất 2 Site.
-* Nếu chỉ lấy được lock từ 1 Site thì giao dịch thất bại.
+```text
+Write Quorum (W) = 2
+```
+
+Điều kiện:
+
+```text
+W > N / 2
+```
+
+Hay:
+
+```text
+2 > 3 / 2
+```
+
+Điều này có nghĩa rằng giao dịch chỉ được phép thực hiện khi nhận được khóa từ ít nhất 2 Site.
 
 Ví dụ:
 
 ```text
-Site1 + Site2 = Thành công
-Site1 + Site3 = Thành công
-Site2 + Site3 = Thành công
+Site1 + Site2 → Thành công
 
-Chỉ Site1 = Thất bại
+Site1 + Site3 → Thành công
+
+Site2 + Site3 → Thành công
+
+Chỉ Site1 → Thất bại
+```
+
+---
+
+## Thuật toán hoạt động
+
+```text
+Bước 1:
+Client gửi yêu cầu cập nhật.
+
+Bước 2:
+Quorum Manager gửi yêu cầu lock tới tất cả Site.
+
+Bước 3:
+Mỗi Site cố gắng lấy lock cục bộ.
+
+Bước 4:
+Quorum Manager đếm số Site lock thành công.
+
+Nếu số lock >= 2:
+    Thực hiện cập nhật dữ liệu.
+    Giải phóng lock.
+Ngược lại:
+    Hủy giao dịch.
+```
+
+Pseudo-code:
+
+```text
+AcquireLock(AllSites)
+
+if LockedSites >= 2:
+    UpdateProfile()
+    ReleaseLocks()
+else:
+    AbortTransaction()
 ```
 
 ---
 
 # Các kịch bản mô phỏng
 
-## 1. Healthy
+## Healthy
 
 Tất cả Site hoạt động bình thường.
 
@@ -109,9 +226,9 @@ Kết quả mong đợi:
 
 ---
 
-## 2. Slow Node
+## Slow Node
 
-Site 3 bị chậm.
+Site 3 phản hồi chậm.
 
 ```text
 Site 1 = 20ms
@@ -121,38 +238,36 @@ Site 3 = 500ms
 
 Kết quả mong đợi:
 
-* Vẫn đạt Quorum bằng Site 1 và Site 2.
-* Giao dịch thành công.
-* Hiệu năng gần như không thay đổi.
+* Vẫn đạt Quorum nhờ Site 1 và Site 2.
+* Hệ thống gần như không bị ảnh hưởng.
 
 ---
 
-## 3. Node Down
+## Node Down
 
 Site 3 bị ngắt kết nối.
 
 ```text
 Site 1 = 20ms
 Site 2 = 25ms
-Site 3 = DOWN
+Site 3 = OFFLINE
 ```
 
 Kết quả mong đợi:
 
-* Vẫn đạt Quorum bằng Site 1 và Site 2.
-* Giao dịch thành công.
-* Hệ thống vẫn hoạt động ổn định.
+* Vẫn đạt Quorum.
+* Hệ thống tiếp tục hoạt động bình thường.
 
 ---
 
-## 4. Quorum Fail
+## Quorum Fail
 
-Không còn đủ Site để đạt Quorum.
+Hai Site không hoạt động.
 
 ```text
 Site 1 = 20ms
-Site 2 = DOWN
-Site 3 = DOWN
+Site 2 = OFFLINE
+Site 3 = OFFLINE
 ```
 
 Kết quả mong đợi:
@@ -187,6 +302,8 @@ project/
 │
 ├── app.py
 │
+├── data.csv
+│
 ├── templates/
 │   └── index.html
 │
@@ -202,14 +319,7 @@ project/
 
 # Hướng dẫn cài đặt
 
-## Bước 1: Clone project
-
-```bash
-git clone <repository-url>
-cd quorum-distributed-locking
-```
-
-## Bước 2: Tạo môi trường ảo
+### Tạo môi trường ảo
 
 ```bash
 python -m venv venv
@@ -227,19 +337,19 @@ Linux/MacOS:
 source venv/bin/activate
 ```
 
-## Bước 3: Cài đặt thư viện
+### Cài đặt thư viện
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Bước 4: Chạy ứng dụng
+### Chạy chương trình
 
 ```bash
 python app.py
 ```
 
-Mở trình duyệt:
+Truy cập:
 
 ```text
 http://127.0.0.1:5000
@@ -251,7 +361,11 @@ http://127.0.0.1:5000
 
 ## Average Latency
 
-Thời gian phản hồi trung bình của mỗi giao dịch.
+Thời gian phản hồi trung bình của các giao dịch thành công.
+
+Công thức:
+
+Latency = Tổng thời gian giao dịch / Số giao dịch thành công
 
 Đơn vị:
 
@@ -265,6 +379,10 @@ ms
 
 Số lượng giao dịch xử lý thành công trong một giây.
 
+Công thức:
+
+Throughput = Số giao dịch thành công / Tổng thời gian benchmark
+
 Đơn vị:
 
 ```text
@@ -277,6 +395,10 @@ tx/s
 
 Tỷ lệ giao dịch thành công.
 
+Công thức:
+
+Success Rate = (Số giao dịch thành công / Tổng số giao dịch) × 100%
+
 Đơn vị:
 
 ```text
@@ -285,37 +407,40 @@ Tỷ lệ giao dịch thành công.
 
 ---
 
-# Kết quả thực nghiệm (Ví dụ)
+# Kết quả thực nghiệm
 
 | Kịch bản    | Latency (ms) | Throughput (tx/s) | Success Rate |
 | ----------- | ------------ | ----------------- | ------------ |
-| Healthy     | 26.6        | 37.59             | 100%         |
-| Slow Node   | 26.8        | 38.31             | 100%         |
-| Node Down   | 27.06        | 36.95             | 100%         |
+| Healthy     | 26.29        | 38.04             | 100%         |
+| Slow Node   | 26.45        | 37.80             | 100%         |
+| Node Down   | 26.28        | 38.10             | 100%         |
 | Quorum Fail | 0            | 0                 | 0%           |
 
 ---
 
 # Phân tích kết quả
 
-Kết quả cho thấy:
+Kết quả thực nghiệm cho thấy:
 
-* Khi Site 3 bị chậm 500ms, độ trễ trung bình gần như không thay đổi.
-* Khi Site 3 bị ngắt kết nối, hệ thống vẫn hoạt động bình thường.
+* Khi Site 3 phản hồi chậm 500ms, độ trễ trung bình gần như không thay đổi.
+* Khi Site 3 ngừng hoạt động, hệ thống vẫn tiếp tục xử lý giao dịch bình thường.
 * Quorum được hình thành từ Site 1 và Site 2.
-* Hiệu năng được duy trì khi đa số Site vẫn phản hồi nhanh.
-* Giao dịch chỉ thất bại khi không đạt đủ số lượng lock yêu cầu.
+* Hiệu năng hệ thống được duy trì khi đa số Site vẫn hoạt động.
+* Giao dịch chỉ thất bại khi không đạt đủ số lượng khóa yêu cầu.
+
+Điều này chứng minh rằng cơ chế Quorum giúp hệ thống duy trì tính nhất quán dữ liệu và khả năng chịu lỗi trong môi trường phân tán.
 
 ---
 
 # Kết luận
 
-Đồ án đã mô phỏng thành công cơ chế Quorum-Based Distributed Locking với 3 Site sao chép dữ liệu.
+Đồ án đã mô phỏng thành công cơ chế Quorum-Based Distributed Locking trên hệ cơ sở dữ liệu phân tán gồm 3 Site sao chép dữ liệu.
 
-Kết quả thực nghiệm chứng minh:
+Kết quả thực nghiệm cho thấy:
 
-* Cơ chế Quorum giúp đảm bảo tính nhất quán dữ liệu.
-* Hệ thống vẫn duy trì hiệu năng khi một Site bị chậm hoặc bị lỗi.
-* Giao dịch chỉ được thực hiện khi đạt đa số lock (2/3).
-* Hệ thống có khả năng chịu lỗi tốt trong môi trường phân tán.
+* Cơ chế Quorum đảm bảo tính nhất quán dữ liệu.
+* Hệ thống vẫn hoạt động khi một Site bị lỗi hoặc phản hồi chậm.
+* Hiệu năng được duy trì khi còn đủ số lượng Site để hình thành Quorum.
+* Giao dịch chỉ được thực hiện khi đạt đa số khóa yêu cầu (2/3).
 
+Qua đó cho thấy Quorum-Based Distributed Locking là một giải pháp hiệu quả nhằm đảm bảo tính nhất quán và khả năng chịu lỗi trong các hệ cơ sở dữ liệu phân tán.
