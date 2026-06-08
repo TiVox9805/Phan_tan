@@ -548,9 +548,9 @@ def benchmark_all():
         "down"
     )
 
-    fail = run_benchmark(
-        "fail"
-    )
+    # fail = run_benchmark(
+    #     "fail"
+    # )
 
     return jsonify({
 
@@ -563,8 +563,8 @@ def benchmark_all():
         "down":
             down,
 
-        "fail":
-            fail
+        # "fail":
+        #     fail
 
     })
 

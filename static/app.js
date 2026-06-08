@@ -359,13 +359,6 @@ function renderComparisonTable(data) {
         <td class="border p-2">${data.down.success_rate}%</td>
     </tr>
 
-    <tr>
-        <td class="border p-2">Quorum Fail</td>
-        <td class="border p-2">${data.fail.latency}</td>
-        <td class="border p-2">${data.fail.throughput}</td>
-        <td class="border p-2">${data.fail.success_rate}%</td>
-    </tr>
-
     `;
 }
 
